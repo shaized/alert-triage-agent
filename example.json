@@ -1,39 +1,30 @@
 {
-  "advisory": {
-    "id": "DEMO-2026-001",
-    "vendor": "Example Vendor",
-    "product": "Example Gateway",
-    "affected_versions": [
-      "2.4.0",
-      "2.4.1"
-    ],
-    "source": "https://example.org/advisories/DEMO-2026-001",
-    "exploitation": "unknown"
-  },
-  "inventory": {
-    "scope": "Fictional training lab snapshot",
-    "assets": [
-      {
-        "id": "lab-gateway",
-        "vendor": "Example Vendor",
-        "product": "Example Gateway",
-        "version": "2.4.1",
-        "exposure": "internet"
-      },
-      {
-        "id": "lab-worker",
-        "vendor": "Example Vendor",
-        "product": "Example Gateway",
-        "version": null,
-        "exposure": "internal"
-      },
-      {
-        "id": "lab-updated",
-        "vendor": "Example Vendor",
-        "product": "Example Gateway",
-        "version": "2.5.0",
-        "exposure": "internal"
-      }
-    ]
-  }
+  "scope": "Fictional lab, 2026-01-15 10:00–10:30 UTC",
+  "evidence": [
+    {
+      "id": "obs-1",
+      "source": "Synthetic identity log",
+      "observation": "A new device was used for the demo account."
+    }
+  ],
+  "alerts": [
+    {
+      "id": "alert-1",
+      "entity": "lab/account-demo",
+      "title": "New sign-in device",
+      "timestamp": "2026-01-15T10:05:00Z",
+      "severity": "medium",
+      "evidence_ids": [
+        "obs-1"
+      ]
+    },
+    {
+      "id": "alert-2",
+      "entity": "lab/account-demo",
+      "title": "Unusual access pattern",
+      "timestamp": "2026-01-15T10:06:00Z",
+      "severity": "high",
+      "evidence_ids": []
+    }
+  ]
 }

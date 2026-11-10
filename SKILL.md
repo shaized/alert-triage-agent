@@ -1,18 +1,18 @@
 ---
-name: threat-intel-agent
-description: Model-agnostic threat intelligence skill with a local advisory-to-inventory matching tool and synthetic examples.
+name: alert-triage-agent
+description: SOC triage skill that groups scoped alerts, preserves source priority and exposes missing evidence without auto-closing alerts.
 ---
 
-# Threat Intelligence Agent
+# Alert Triage Agent
 
-Turn an advisory into an evidence-backed exposure review.
+Turn alert snapshots into a focused analyst review queue.
 
 ## Workflow
 
-1. Identify the advisory, affected product, source dates and the assessment scope. Prefer primary vendor advisories and authoritative exploitation evidence.
-2. Compare the advisory with the supplied asset inventory using agent.py. The helper accepts exact versions only; manually resolve version ranges, packaging and backports with evidence.
-3. Assess runtime presence, configuration, exposure, required attacker access and controls separately. Record what is measured and what is inferred.
-4. Return an exposure assessment with evidence references, missing coverage, confidence reasoning and specific next steps. A version match establishes a candidate, not compromise.
+1. Clarify the alert scope, source rule, entity identifiers and timestamps. Check whether the evidence covers the event and relevant surrounding activity.
+2. Run agent.py to build an entity-based queue. Source priority is inherited from the highest alert and is not a new incident severity verdict.
+3. Assess supporting observations, benign explanations and contradictory evidence. Familiar names, known tools and prior false positives are context, not proof of authorization.
+4. Return a reasoned disposition proposal per alert, with evidence references and gaps. Never turn grouping alone into a common-cause claim or automatic closure.
 
 ## Local evidence tool
 

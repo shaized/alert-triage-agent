@@ -1,53 +1,36 @@
-# Threat Intelligence Agent
+# Alert Triage Agent
 
 ## Summary
 
-- **advisory:** DEMO-2026-001
-- **scope:** Fictional training lab snapshot
-- **assets examined:** 3
-- **product candidates:** 3
-- **affected version matches:** 1
-- **assessment:** potential\_exposure
+- **scope:** Fictional lab, 2026-01-15 10:00–10:30 UTC
+- **alerts:** 2
+- **review groups:** 1
+- **automatic dispositions:** 0
 
 ## Findings
 
 ### Finding 1
 
-- **asset:** lab-gateway
-- **version:** 2\.4\.1
-- **status:** affected\_version\_match
-- **exposure:** internet
-- **review priority:** expedite
-- **evidence:** \["inventory:lab-gateway", "https://example\.org/advisories/DEMO-2026-001"\]
-
-### Finding 2
-
-- **asset:** lab-worker
-- **version:** null
-- **status:** version\_unknown
-- **exposure:** internal
-- **review priority:** verify
-- **evidence:** \["inventory:lab-worker", "https://example\.org/advisories/DEMO-2026-001"\]
-
-### Finding 3
-
-- **asset:** lab-updated
-- **version:** 2\.5\.0
-- **status:** version\_not\_listed
-- **exposure:** internal
-- **review priority:** verify
-- **evidence:** \["inventory:lab-updated", "https://example\.org/advisories/DEMO-2026-001"\]
+- **entity:** lab/account-demo
+- **source priority:** high
+- **status:** analyst\_review\_required
+- **alert ids:** \["alert-1", "alert-2"\]
+- **alert titles:** \["New sign-in device", "Unusual access pattern"\]
+- **first seen:** 2026-01-15T10:05:00Z
+- **last seen:** 2026-01-15T10:06:00Z
+- **evidence ids:** \["obs-1"\]
+- **alerts without evidence:** \["alert-2"\]
 
 
 ## Limitations
 
-- Exact vendor/product and exact version matching only; no aliases, ranges, backport or reachability analysis\.
-- A listed vulnerable version does not prove exploitability or compromise; a non-listed version is not confirmed safe\.
-- The input snapshot is not independently verified\. Inventory completeness and source freshness are unknown\.
-- Review priority is a transparent example heuristic, not CVSS, SSVC or a remediation SLA\.
+- Grouping by caller-supplied entity is an organizational aid, not proof that alerts share a cause\.
+- Priority is inherited from the highest source alert; the tool does not establish incident severity\.
+- Evidence identifiers are checked for existence, not truth\. Empty evidence lists remain visible\.
+- No alert is closed, suppressed or marked benign, including alerts from familiar entities\.
 
 ## Next Steps
 
-- Verify advisory scope, version ranges and exploitation evidence against primary sources\.
-- Check runtime version, configuration, reachability and mitigations for each candidate\.
-- Record missing inventory coverage and assign an owner to unresolved exposure\.
+- Verify entity identity, time range and collection coverage before correlating alerts\.
+- Review supporting observations, benign explanations and contradictory evidence\.
+- Record a reasoned analyst disposition for each alert through the owning system\.

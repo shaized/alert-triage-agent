@@ -2,7 +2,7 @@
 
 ## Input
 
-The root has advisory and inventory objects. advisory requires id, vendor, product, affected_versions (a nonempty list of exact version strings), source and exploitation (observed, not_reported or unknown). inventory requires scope and assets. Each asset requires a unique id, vendor, product, version (string or null), and exposure (internet, internal or unknown). Vendor/product matching ignores case and surrounding whitespace; version matching is exact. An unlisted version is unresolved, not safe.
+The root requires scope, evidence and alerts. Evidence items need unique id, source and observation. Alerts need unique id, entity, title, timestamp with offset, severity (informational/low/medium/high/critical) and evidence_ids. Empty evidence_ids is allowed and explicitly reported; unknown references fail. Entity IDs must be unambiguous within the caller's scope. Grouping does not impose a time-window correlation.
 
 See [example.json](example.json) for a complete fictional input. All demo identities, indicators, events, products and reputation providers are synthetic. Documentation IPs and example domains are not threat intelligence.
 
@@ -16,6 +16,6 @@ JSON preserves evidence text. Markdown renders evidence as literal escaped text,
 
 ## Example interpretation
 
-One affected-version candidate, one unknown version and one version not listed in the advisory. Overall exposure remains subject to verification.
+One high-source-priority review group containing two alerts. The alert without supporting evidence remains explicitly unresolved.
 
-Vendor advisories and package maintainers should be the primary source for affected ranges; the demo advisory is fictional.
+Use the authoritative alert definition and original telemetry for a real investigation. A vendor-neutral example cannot establish the semantics of a particular SIEM field.

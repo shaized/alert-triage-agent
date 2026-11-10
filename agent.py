@@ -1,86 +1,86 @@
-"""Compare an advisory snapshot with an explicitly scoped inventory."""
+"""Group scoped alert snapshots into evidence-linked review queues."""
 
-from runtime import choice, cli, obj, report, rows, strings, text, unique
+from collections import defaultdict
+
+from runtime import choice, cli, instant, report, rows, strings, text, unique, utc
+
+SEVERITY = {"informational": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
 
 
 def analyze(data):
-    advisory = obj(data.get("advisory"), "advisory")
-    inventory = obj(data.get("inventory"), "inventory")
-    advisory_id = text(advisory.get("id"), "advisory.id")
-    vendor = text(advisory.get("vendor"), "advisory.vendor").casefold()
-    product = text(advisory.get("product"), "advisory.product").casefold()
-    versions = set(strings(advisory.get("affected_versions"), "affected_versions"))
-    if not versions:
-        raise ValueError("affected_versions must contain explicitly verified versions")
-    source = text(advisory.get("source"), "advisory.source")
-    exploitation = choice(
-        advisory.get("exploitation"),
-        ["observed", "not_reported", "unknown"],
-        "exploitation",
-    )
-    scope = text(inventory.get("scope"), "inventory.scope")
-    assets = rows(inventory.get("assets"), "inventory.assets")
-    unique(assets)
-    findings = []
-    for asset in assets:
-        asset_vendor = text(asset.get("vendor"), "asset.vendor").casefold()
-        asset_product = text(asset.get("product"), "asset.product").casefold()
-        if (asset_vendor, asset_product) != (vendor, product):
-            continue
-        version = asset.get("version")
-        if version is not None:
-            version = text(version, "asset.version")
-        exposure = choice(
-            asset.get("exposure", "unknown"),
-            ["internet", "internal", "unknown"],
-            "asset.exposure",
-        )
-        status = (
-            "version_unknown"
-            if version is None
-            else "affected_version_match"
-            if version in versions
-            else "version_not_listed"
-        )
-        priority = "verify"
-        if status == "affected_version_match":
-            priority = (
-                "expedite"
-                if exploitation == "observed" or exposure == "internet"
-                else "review"
-            )
-        findings.append(
+    scope = text(data.get("scope"), "scope")
+    evidence = rows(data.get("evidence"), "evidence")
+    unique(evidence)
+    known = set()
+    for item in evidence:
+        known.add(item["id"])
+        text(item.get("observation"), "evidence.observation")
+        text(item.get("source"), "evidence.source")
+    alerts = rows(data.get("alerts"), "alerts")
+    unique(alerts)
+    groups = defaultdict(list)
+    for alert in alerts:
+        entity = text(alert.get("entity"), "alert.entity")
+        severity = choice(alert.get("severity"), list(SEVERITY), "alert.severity")
+        timestamp = instant(alert.get("timestamp"), "alert.timestamp")
+        refs = strings(alert.get("evidence_ids"), "alert.evidence_ids")
+        if not set(refs).issubset(known):
+            raise ValueError("alert references unknown evidence")
+        groups[entity].append(
             {
-                "asset": asset["id"],
-                "version": version,
-                "status": status,
-                "exposure": exposure,
-                "review_priority": priority,
-                "evidence": [f"inventory:{asset['id']}", source],
+                "id": alert["id"],
+                "severity": severity,
+                "timestamp": utc(timestamp),
+                "evidence_ids": refs,
+                "title": text(alert.get("title"), "alert.title"),
             }
         )
-    matches = sum(f["status"] == "affected_version_match" for f in findings)
+    findings = []
+    for entity, members in sorted(groups.items()):
+        priority = max((a["severity"] for a in members), key=SEVERITY.get)
+        findings.append(
+            {
+                "entity": entity,
+                "source_priority": priority,
+                "status": "analyst_review_required",
+                "alert_ids": [a["id"] for a in members],
+                "alert_titles": [a["title"] for a in members],
+                "first_seen": min(
+                    (a["timestamp"] for a in members),
+                    key=lambda t: instant(t, "timestamp"),
+                ),
+                "last_seen": max(
+                    (a["timestamp"] for a in members),
+                    key=lambda t: instant(t, "timestamp"),
+                ),
+                "evidence_ids": sorted(
+                    {ref for a in members for ref in a["evidence_ids"]}
+                ),
+                "alerts_without_evidence": [
+                    a["id"] for a in members if not a["evidence_ids"]
+                ],
+            }
+        )
+    findings.sort(key=lambda item: (-SEVERITY[item["source_priority"]], item["entity"]))
     return report(
-        "Threat Intelligence Agent",
+        "Alert Triage Agent",
         {
-            "advisory": advisory_id,
             "scope": scope,
-            "assets_examined": len(assets),
-            "product_candidates": len(findings),
-            "affected_version_matches": matches,
-            "assessment": "potential_exposure" if matches else "inconclusive",
+            "alerts": len(alerts),
+            "review_groups": len(findings),
+            "automatic_dispositions": 0,
         },
         findings,
         [
-            "Exact vendor/product and exact version matching only; no aliases, ranges, backport or reachability analysis.",
-            "A listed vulnerable version does not prove exploitability or compromise; a non-listed version is not confirmed safe.",
-            "The input snapshot is not independently verified. Inventory completeness and source freshness are unknown.",
-            "Review priority is a transparent example heuristic, not CVSS, SSVC or a remediation SLA.",
+            "Grouping by caller-supplied entity is an organizational aid, not proof that alerts share a cause.",
+            "Priority is inherited from the highest source alert; the tool does not establish incident severity.",
+            "Evidence identifiers are checked for existence, not truth. Empty evidence lists remain visible.",
+            "No alert is closed, suppressed or marked benign, including alerts from familiar entities.",
         ],
         [
-            "Verify advisory scope, version ranges and exploitation evidence against primary sources.",
-            "Check runtime version, configuration, reachability and mitigations for each candidate.",
-            "Record missing inventory coverage and assign an owner to unresolved exposure.",
+            "Verify entity identity, time range and collection coverage before correlating alerts.",
+            "Review supporting observations, benign explanations and contradictory evidence.",
+            "Record a reasoned analyst disposition for each alert through the owning system.",
         ],
     )
 
